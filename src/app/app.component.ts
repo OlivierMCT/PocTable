@@ -28,23 +28,6 @@ export class AppComponent implements AfterViewInit {
   public set tasksList(tasksList: TaskBll[]) {
     this._tasksList = tasksList;
     // Mise à jour de la table à chaque fois que la collection évolue
-    let infos = {
-      columns: [{
-        field: 'taskID',
-        title: 'Task ID'
-      }, {
-        field: 'label',
-        title: 'Label'
-      }, {
-        field: 'agent',
-        title: 'agent'
-      }, {
-        field: 'step',
-        title: 'Step'
-      }],
-      data: this._tasksList
-    };
-
     ($('#myTable') as any).bootstrapTable({data: this._tasksList});
   }
 
