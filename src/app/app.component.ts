@@ -1,4 +1,7 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, ViewChildren } from '@angular/core';
+import { delay, Subscription } from 'rxjs';
+import { TaskService } from './services/task.service';
+import { TaskBll } from './task-bll';
 declare var $: (arg: any) => any;
 
 @Component({
@@ -17,7 +20,62 @@ export class AppComponent implements AfterViewInit {
     { 'id': 5, 'name': 'Item 5', 'price': '$5' }
   ];
 
-  ngAfterViewInit(): void {
-    ($('#myTable') as any).bootstrapTable({data: this.data});
+
+  private _tasksList: TaskBll[] = [];
+  public get tasksList(): TaskBll[] {
+    return this._tasksList;
+  }
+  public set tasksList(tasksList: TaskBll[]) {
+    this._tasksList = tasksList;
+    // Mise à jour de la table à chaque fois que la collection évolue
+    let infos = {
+      columns: [{
+        field: 'taskID',
+        title: 'Task ID'
+      }, {
+        field: 'label',
+        title: 'Label'
+      }, {
+        field: 'agent',
+        title: 'agent'
+      }, {
+        field: 'step',
+        title: 'Step'
+      }],
+      data: this._tasksList
+    };
+
+    ($('#myTable') as any).bootstrapTable({data: this._tasksList});
+  }
+
+  private _subscriptions: Subscription[] = [];
+
+  constructor(private _taskService: TaskService) {
+
+  }
+
+  public ngAfterViewInit(): void {
+    // Avec données en dur (pas de modification de la table car initialisation avec les valeurs)
+    // ($('#myTable') as any).bootstrapTable({ data: this.tasks });
+
+    // Avec données suite appel API (table initialisée sans données, puis données mises à jour)
+    //($('#myTable') as any).bootstrapTable({ data: this._tasksList });
+
+    // Récupération des donné quand on est sur de pouvoir accéder à la BootstrapTable
+    this._subscriptions.push(
+      this._taskService.get().pipe(delay(1000)).subscribe({
+        next: (data) => {
+          console.log(data);
+          this.tasksList = data; // Utilisation du set tasksList
+        },
+        error: (err) => {
+          console.log(err);
+        },
+      })
+    );
+  }
+
+  public ngOnDestroy(): void {
+    this._subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }
